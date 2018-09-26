@@ -23,7 +23,7 @@ using namespace std;
 // 7. close to releases data.
 
 vector<int> check_open_ports () {
-    int port = 4000;
+    int port = 3000;
     int count = 1;
 
     // Creating variables
@@ -81,14 +81,12 @@ vector<int> check_open_ports () {
     vector<int> ports;
 
     for(int i = 1; i < 4; i++) {
-        ports.push_back(port-2);
+        ports.push_back(port-3);
         port++;
     }
 
     return ports;
 }
-
-
 
 
 int main(int argc, char *argv[])
@@ -101,18 +99,10 @@ int main(int argc, char *argv[])
     int n;
     int max_sd;
     vector<int> ports = check_open_ports();
-    cout << "Hello1" << endl;
 
     //set of socket descriptors
     fd_set readfds;
-
-    cout << "SIZE " <<  ports.size() << endl;
-
-    for (int i = 0; i <  ports.size(); i++) {
-        cout << i << " " << ports[i] << endl;
-    }
-
-
+    
     /*if (argc < 2) {
      perror("No port provided");
      exit(-1);
