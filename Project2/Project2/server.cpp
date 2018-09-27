@@ -89,6 +89,29 @@ vector<int> check_open_ports () {
     return ports;
 }
 
+int read (int fdes) {
+    char buffer[MAX];
+    int n;
+
+    n = read (fdes, buffer, MAX);
+    if (n < 0) {
+        /* Read error. */
+        perror ("Error on read");
+        exit (-1);
+    }
+    else if (n == 0) {
+        /* End-of-file. */
+        return -1;
+    }
+
+    else {
+        /* Data read. */
+        fprintf (stderr, "Server: got message: `%s'\n", buffer);
+        return 0;
+    }
+}
+
+
 int main(int argc, char *argv[])
 {
     // Creating variables
@@ -98,6 +121,7 @@ int main(int argc, char *argv[])
     struct sockaddr_in serv_addr, cli_addr;
     fd_set active_fd_set, read_fd_set;
     vector<int> ports = check_open_ports();
+
 
     for (int i = 0; i <  ports.size(); i++) {
         // Create the socket
@@ -118,11 +142,15 @@ int main(int argc, char *argv[])
         // Initialise the socketaddr_in structure
         serv_addr.sin_family = AF_INET;
 
+        cout << "1 " << portno << endl;
+
         // Automatically fill with current host's IP address
         serv_addr.sin_addr.s_addr = INADDR_ANY;
 
         // Converting port number to network byte order
         serv_addr.sin_port = htons(portno);
+
+        cout << "2 " << portno << endl;
 
         // Binding the socket to the current IP address on port, portno
         int binding = bind(sock_fd, (struct sockaddr *) &serv_addr, sizeof(serv_addr));
@@ -132,30 +160,31 @@ int main(int argc, char *argv[])
             perror("Error binding");
             exit(-1);
         }
+
         // This listen() call tells the socket to listen to the incoming connections and places all incoming
         // connection into a backlog queue until accept() call accepts the connection
         // Here the maximum size for the backlog queue is 3
-        listen(sock_fd, 3);
-
+        listen(sock_fd, 1);
 
         /* Initialize the set of active sockets. */
-        FD_ZERO (&active_fd_set);
-        FD_SET (sock_fd, &active_fd_set);
+        FD_ZERO(&active_fd_set);
+        FD_SET(sock_fd, &active_fd_set);
 
-        while(true) {
+        while (true) {
 
+            cout << "3 " << portno << endl;
             /* Block until input arrives on one or more active sockets. */
             read_fd_set = active_fd_set;
 
-            if (select (FD_SETSIZE, &read_fd_set, NULL, NULL, NULL) < 0) {
-                perror ("select");
-                exit (EXIT_FAILURE);
+            if (select(FD_SETSIZE, &read_fd_set, NULL, NULL, NULL) < 0) {
+                perror("select");
+                exit(EXIT_FAILURE);
             }
 
             /* Service all the sockets with input pending. */
             for (int j = 0; j < FD_SETSIZE; j++) {
 
-                if (FD_ISSET (j, &read_fd_set)) {
+                if (FD_ISSET(j, &read_fd_set)) {
 
                     if (j == sock_fd) {
 
@@ -168,33 +197,16 @@ int main(int argc, char *argv[])
                             exit(-1);
                         }
 
-                        cout << "server: got connection from " <<  inet_ntoa(cli_addr.sin_addr) << " port " << ntohs(cli_addr.sin_port) << endl;
+                        cout << "server: got connection from " << inet_ntoa(cli_addr.sin_addr) << " port "
+                             << ntohs(cli_addr.sin_port) << endl;
 
-                        FD_SET (new_sock_fd, &active_fd_set);
-                    }
-                    else {
+                        FD_SET(new_sock_fd, &active_fd_set);
+                    } else {
 
-                        bzero(buffer, 256);
-
-                        n = read(j, buffer, 255);
-
-                        if (n < 0) {
-                            perror("Error reading from socket");
-                            exit(-1);
-                        }
-                        else if(n == 0) {
-                            close(j);
-                            FD_CLR(j, &active_fd_set);
-                        }
-                        else {
-                            cout << "Here is the message: " << buffer << endl;
-
-                            n = write(new_sock_fd, "Server got your message", 24);
-
-                            if (n < 0) {
-                                perror("Error writing from socket");
-                                exit(-1);
-                            }
+                        if (read(j) < 0)
+                        {
+                            close (i);
+                            FD_CLR (i, &active_fd_set);
                         }
 
                     }
