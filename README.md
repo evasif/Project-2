@@ -9,8 +9,10 @@ To start this project you need to have a program that can read the programming l
 
 3. Authors
 Authors for this project are Eva Sif Einarsdóttir and Ísabella Ýr Finnsdóttir.
+Project is hosted privately on GitHub for easier sharing in the project between the two.
 
 4. Acknowledgements
 There were a few inspirations for this project particularly in creating a method for allowing multiple clients. These inspirations came from Gnu.org: http://www.gnu.org/software/libc/manual/html_node/Server-Example.html and BogoToBogo: https://www.bogotobogo.com/cplusplus/sockets_server_client.php.
+
 4.1. Collaborators
 This assignment was worked on in close range with our peers, we shared ideas and thoughts on the project (but never code). Their names are Unnur Lára and Hreiðar Kristinn.
