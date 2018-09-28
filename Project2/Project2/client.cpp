@@ -6,6 +6,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <iostream>
+using namespace std;
 
 int main(int argc, char *argv[]) {
     // Creating variables
@@ -62,13 +64,13 @@ int main(int argc, char *argv[]) {
         exit(-1);
     }
 
-    printf("Please enter the message: ");
+    cout << "Please enter your message: " << endl;
 
     // Erases the previous data in the buffer
     bzero(buffer, 256);
 
-    // Reading the message from the client
-    fgets(buffer, 255, stdin);
+    // Reading the input from terminal to send as a message
+    cin >> buffer;
 
     // Writing to socket
     n = write(sock_fd, buffer, strlen(buffer));
@@ -89,7 +91,9 @@ int main(int argc, char *argv[]) {
         exit(-1);
     }
 
-    printf("%.*s\n",n,buffer);
+    // Print response from server
+    cout << buffer << endl;
+
     close(sock_fd);
     return 0;
 }
