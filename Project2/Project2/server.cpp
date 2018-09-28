@@ -89,7 +89,7 @@ vector<int> check_open_ports () {
     return ports;
 }
 
-int read (int fdes) {
+int read (int fdes, int new_sock_fd) {
     char buffer[MAX];
     int n;
 
@@ -106,7 +106,8 @@ int read (int fdes) {
 
     else {
         /* Data read. */
-        fprintf (stderr, "Server: got message: `%s'\n", buffer);
+        fprintf (stderr, "Server: got message: %s\n", buffer);
+        n = write(new_sock_fd, "Server got your message", 24);
         return 0;
     }
 }
@@ -142,15 +143,12 @@ int main(int argc, char *argv[])
         // Initialise the socketaddr_in structure
         serv_addr.sin_family = AF_INET;
 
-        cout << "1 " << portno << endl;
-
         // Automatically fill with current host's IP address
         serv_addr.sin_addr.s_addr = INADDR_ANY;
 
         // Converting port number to network byte order
         serv_addr.sin_port = htons(portno);
 
-        cout << "2 " << portno << endl;
 
         // Binding the socket to the current IP address on port, portno
         int binding = bind(sock_fd, (struct sockaddr *) &serv_addr, sizeof(serv_addr));
@@ -172,7 +170,6 @@ int main(int argc, char *argv[])
 
         while (true) {
 
-            cout << "3 " << portno << endl;
             /* Block until input arrives on one or more active sockets. */
             read_fd_set = active_fd_set;
 
@@ -203,7 +200,7 @@ int main(int argc, char *argv[])
                         FD_SET(new_sock_fd, &active_fd_set);
                     } else {
 
-                        if (read(j) < 0)
+                        if (read(j, new_sock_fd) < 0)
                         {
                             close (i);
                             FD_CLR (i, &active_fd_set);
