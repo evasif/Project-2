@@ -9,11 +9,11 @@
 #include <iostream>
 using namespace std;
 
-int main(int argc, char *argv[]) {
+int main(int argc, char * argv[]) {
     // Creating variables
     int sock_fd, portno, n;
     struct sockaddr_in serv_addr;
-    struct hostent *server;
+    struct hostent * server;
     char buffer[256];
 
     // Checking that there is right amount of arguments
@@ -44,19 +44,19 @@ int main(int argc, char *argv[]) {
     }
 
     // Clear address structure
-    bzero((char *) &serv_addr, sizeof(serv_addr));
+    bzero((char * ) & serv_addr, sizeof(serv_addr));
 
     // Initialise the socketaddr_in structure
     serv_addr.sin_family = AF_INET;
 
     // Clear address structure
-    bzero((char *) &serv_addr, sizeof(serv_addr));
+    bzero((char * ) & serv_addr, sizeof(serv_addr));
 
     // Converting port number to network byte order
     serv_addr.sin_port = htons(portno);
 
     // Connecting to a remote address
-    int connected = connect(sock_fd, (struct sockaddr *) &serv_addr, sizeof(serv_addr));
+    int connected = connect(sock_fd, (struct sockaddr * ) & serv_addr, sizeof(serv_addr));
 
     // Error check for connect
     if (connected < 0) {
@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
     bzero(buffer, 256);
 
     // Reading the input from terminal to send as a message
-    cin >> buffer;
+    fgets(buffer, 255, stdin);
 
     // Writing to socket
     n = write(sock_fd, buffer, strlen(buffer));

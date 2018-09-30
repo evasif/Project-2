@@ -10,32 +10,21 @@
 #include <iostream>
 #include <netdb.h>
 #include <vector>
-
 using namespace std;
 
-// 1. create a socket - Get the file descriptor!
-// 2. bind to an address - What port am I on?
-// 3. listen on a port, and wait for a connection to be established.
-// 4. accept the connection from a client.
-// 5. send/recv - the same way we read and write for a file.
-// 6. shutdown to end read/write.
-// 7. close to releases data.
-
-
 // Function for finding 3 ports in a row that we can use, returns an vector containing the ports that we can use
-vector<int> check_open_ports () {
+vector < int > check_open_ports() {
 
     // Creating variables
     struct sockaddr_in server_addr;
     int sock_fd, connected;
-    struct hostent *server;
+    struct hostent * server;
     int port = 3000;
     int count = 1;
-    vector<int> ports;
-
+    vector < int > ports;
 
     // While loops which loops until we find 3 ports in a row we can use
-    while(count < 4) {
+    while (count < 4) {
 
         // Create the TCP socket
         sock_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -65,7 +54,7 @@ vector<int> check_open_ports () {
         memcpy((char *)&server_addr.sin_addr.s_addr, (char *)server->h_addr, server->h_length);
 
         // Connecting to a remote address
-        connected = connect(sock_fd, (struct sockaddr *)&server_addr, sizeof(server_addr));
+        connected = connect(sock_fd, (struct sockaddr * ) & server_addr, sizeof(server_addr));
 
         // Checking if this specific port is open or closed
         if (connected < 0) {
@@ -89,15 +78,61 @@ vector<int> check_open_ports () {
         }
     }
 
-
     // Pushing the available ports into the vector
-    for(int i = 0; i < 3; i++) {
-        ports.push_back(port-3);
+    for (int i = 0; i < 3; i++) {
+        ports.push_back(port - 3);
         port++;
     }
 
     // Returning the vector
     return ports;
+}
+
+// Getting timestamp for server ID
+int get_timestamp() {
+    time_t t = std::time(0);
+    return static_cast < long int > (t);
+}
+
+// Changing the server id
+string new_server_id() {
+
+    // Creating variables
+    FILE * f;
+    char path[256];
+    int status;
+    string sid;
+
+    // Opening process f
+    f = popen("fortune -s", "r");
+
+    // Error check for the process
+    if (f == NULL) {
+        perror("Error getting fortune");
+        exit(-1);
+    }
+
+    // Splitting strings into tokens
+    while (fgets(path, 256, f) != NULL) {
+        strtok(path, "\n");
+        sid = path;
+    }
+
+    // Close the process
+    status = pclose(f);
+
+    // Error check for closing the process
+    if (status == -1) {
+        perror("Error closing");
+        exit(-1);
+    }
+        // New id for server
+    else {
+        sid += " " + std::to_string(get_timestamp()) + " Group 15";
+
+    }
+
+    return sid;
 }
 
 // Function to read from the client
@@ -106,48 +141,72 @@ int read(int fdes, int new_sock_fd) {
     // Creating variables
     char buffer[512];
     int n;
+    string compare, message;
+    string sid = new_server_id();
 
     // Reading from the client
-    n = read (fdes, buffer, 512);
+    n = read(fdes, buffer, 512);
 
     // Error check when reading from the client
     if (n < 0) {
-        perror ("Error on read");
-        exit (-1);
+        perror("Error on read");
+        exit(-1);
     }
 
-    // If n is 0 then we have reached the end of the file, and return -1 to stop reading
+        // If n is 0 then we have reached the end of the file, and return -1 to stop reading
     else if (n == 0) {
         return -1;
-    }
-
-    // If n is larger than 0 we are still reading from the client
-    else {
+    } else {
 
         // Print the message from client to terminal
         cout << "Got message from client: " << buffer << endl;
 
-        // Letting the client know that the server got the message
-        n = write(new_sock_fd, "Server got your message", 24);
+        compare = strtok(buffer, "\n");
+
+        // Providing a unique ID for the server
+        if (compare == "ID") {
+            message = "Server ID: " + sid;
+            char message_char[message.size() + 1];
+            std::copy(message.begin(), message.end(), message_char);
+            n = write(fdes, message_char, sizeof(message_char) - 1);
+            if (n < 0) {
+                perror("Error writing to socket");
+                exit(-1);
+            }
+        } else if (compare == "CONNECT") {
+
+        } else if (compare == "LEAVE") {
+
+        } else if (compare == "WHO") {
+
+        } else if (compare == "MSG") {
+
+        } else if (compare == "MSG ALL") {
+
+        }
+            // Change the ID of the server
+        else if (compare == "CHANGE ID") {
+            string sid = new_server_id();
+            cout << "The new server ID is: " << sid << endl;
+            n = write(fdes, "The servers ID has been changed ", 33);
+        }
 
         return 0;
     }
 }
 
-
-int main(int argc, char *argv[])
-{
+int main(int argc, char * argv[]) {
     // Creating variables
     int sock_fd, new_sock_fd, portno, n, max_sd;
     socklen_t clilen;
     char buffer[256];
     struct sockaddr_in serv_addr, cli_addr;
     fd_set active_fd_set, read_fd_set;
-    vector<int> ports = check_open_ports();
+    vector < int > ports = check_open_ports();
 
     // For loop to traverse our ports that are available
     // (does not work) only opens the first port in the vector
-    for (int i = 0; i <  ports.size(); i++) {
+    for (int i = 0; i < ports.size(); i++) {
 
         // Create the socket
         sock_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -159,7 +218,7 @@ int main(int argc, char *argv[])
         }
 
         // Clear address structure
-        bzero((char *) &serv_addr, sizeof(serv_addr));
+        bzero((char * ) & serv_addr, sizeof(serv_addr));
 
         // Setting the port number to the provided argument
         portno = ports[i];
@@ -174,7 +233,7 @@ int main(int argc, char *argv[])
         serv_addr.sin_port = htons(portno);
 
         // Binding the socket to the current IP address on port, portno
-        int binding = bind(sock_fd, (struct sockaddr *) &serv_addr, sizeof(serv_addr));
+        int binding = bind(sock_fd, (struct sockaddr * ) & serv_addr, sizeof(serv_addr));
 
         // Error check for binding
         if (binding < 0) {
@@ -186,8 +245,8 @@ int main(int argc, char *argv[])
         listen(sock_fd, 5);
 
         // Initialize the set of active sockets.
-        FD_ZERO(&active_fd_set);
-        FD_SET(sock_fd, &active_fd_set);
+        FD_ZERO( & active_fd_set);
+        FD_SET(sock_fd, & active_fd_set);
 
         cout << "The server is up, you can now send the server a message! " << endl;
 
@@ -198,7 +257,7 @@ int main(int argc, char *argv[])
 
             // Select is monitoring multiple file descriptors,
             // waiting until one or more of the file descriptors become ready
-            if (select(FD_SETSIZE, &read_fd_set, NULL, NULL, NULL) < 0) {
+            if (select(FD_SETSIZE, & read_fd_set, NULL, NULL, NULL) < 0) {
                 perror("Error on select");
                 exit(-1);
             }
@@ -208,18 +267,17 @@ int main(int argc, char *argv[])
 
                 // Checking if something happened on the socket, it something happened
                 // than there is an incoming connection
-                if (FD_ISSET(j, &read_fd_set)) {
+                if (FD_ISSET(j, & read_fd_set)) {
 
                     if (j == sock_fd) {
 
                         // Size of the client address
                         clilen = sizeof(cli_addr);
 
-
                         // Extracting the first connection request on the queue of pending connections
                         // for the listening socket, sock_fd, creates a new connected socket, and returns a new file
                         // descriptor referring to that socket.
-                        new_sock_fd = accept(sock_fd, (struct sockaddr *) &cli_addr, &clilen);
+                        new_sock_fd = accept(sock_fd, (struct sockaddr * ) & cli_addr, & clilen);
 
                         // Error check for accept
                         if (new_sock_fd < 0) {
@@ -228,23 +286,22 @@ int main(int argc, char *argv[])
                         }
 
                         // Printing to terminal when we get a connection from a client
-                        cout << "server: got connection from " << inet_ntoa(cli_addr.sin_addr) << " port "
-                             << ntohs(cli_addr.sin_port) << endl;
+                        cout << "server: got connection from " << inet_ntoa(cli_addr.sin_addr) << " port " <<
+                             ntohs(cli_addr.sin_port) << endl;
 
                         // Adds the new_sock_fd to the active_fd_set
-                        FD_SET(new_sock_fd, &active_fd_set);
+                        FD_SET(new_sock_fd, & active_fd_set);
 
-                    // If there is not a new connection incoming we read from the socket
+                        // If there is not a new connection incoming we read from the socket
                     } else {
 
                         // Calling our read() function until we are done reading from the socket
-                        if (read(j, new_sock_fd) < 0)
-                        {
+                        if (read(j, new_sock_fd) < 0) {
                             // Close the socket
-                             close (j);
+                            close(j);
 
                             // Removing the socket from the active_fd_set
-                            FD_CLR (j, &active_fd_set);
+                            FD_CLR(j, & active_fd_set);
                         }
                     }
                 }
